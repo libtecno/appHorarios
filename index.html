@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Horarios Empleados</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      margin-bottom: 40px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 4px 8px;
+      text-align: center;
+      font-size: 13px;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    .feriado {
+      background-color: #cce5ff;
+    }
+    .franco {
+      background-color: #ffe5b4;
+    }
+    .cumple {
+      background-color: #f5b7b1;
+    }
+    .editable {
+      cursor: pointer;
+    }
+    h2 {
+      margin-top: 40px;
+      font-size: 18px;
+    }
+    #selector-fecha {
+      margin-bottom: 20px;
+    }
+    #selector-fecha select {
+      font-size: 14px;
+      padding: 4px;
+    }
+    input[type="time"].hora {
+      font-size: 13px;
+      padding: 2px;
+    }
+    .btn-opcion {
+      margin: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-opcion[data-value="FRANCO"] {
+      background-color: #ffe5b4;
+    }
+    .btn-opcion[data-value="FERIADO"] {
+      background-color: #cce5ff;
+    }
+    .btn-opcion[data-value="CUMPLE"] {
+      background-color: #f5b7b1;
+    }
+    .tab-btn {
+      padding: 6px 12px;
+      margin-right: 6px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .tab-btn.active {
+      background: #e0e0e0;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="titulo">Horarios Colaboradores</h1>
+
+   <!-- Tabs -->
+   <div style="margin-bottom: 20px;">
+    <button class="tab-btn active" data-tab="horarios-tab">Horarios</button>
+    <button class="tab-btn" data-tab="empleados-tab">Colaboradores</button>
+  </div>
+
+  <div id="horarios-tab" class="tab-content active">
+
+    <div id="selector-fecha">
+      <label for="mes">Mes:</label>
+      <select id="mes"></select>
+      <label for="anio">Año:</label>
+      <select id="anio"></select>
+    </div>
+
+    <div id="horarios"></div>
+
+    <div id="selectorHora" style="position: absolute; display: none; background: white; border: 1px solid #ccc; padding: 10px; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+      <div style="margin-bottom: 8px;">
+        <strong>Hora:</strong>
+        <select id="horaSelect"></select>
+        <select id="minutoSelect">
+          <option value="00">00</option>
+          <option value="15">15</option>
+          <option value="30">30</option>
+          <option value="45">45</option>
+        </select>
+        <button id="confirmarHora">OK</button>
+      </div>
+      <div id="accesosRapidos" style="border-top: 1px solid #ddd; padding-top: 8px; text-align: center;">
+        <button class="btn-opcion" data-value="FRANCO">FRANCO</button>
+        <button class="btn-opcion" data-value="FERIADO">FERIADO</button>
+        <button class="btn-opcion" data-value="CUMPLE">CUMPLE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="empleados-tab" class="tab-content">
+    <h2>Colaboradores</h2>
+    <p>Acá vamos a agregar funciones para gestionar los empleados.</p>
+  </div>
+  
+  <script>
+    const empleados = [
+      {
+        nombre: "BACHILLER DIEGO",
+        horarios: {
+          "2025-03-31": ["07:00", "15:00"],
+          "2025-04-01": ["07:00", "15:00"],
+          "2025-04-02": ["07:00", "15:00"],
+          "2025-04-03": ["07:00", "15:00"],
+          "2025-04-04": ["07:00", "15:00"],
+          "2025-04-05": ["CUMPLE", "CUMPLE"],
+          "2025-04-06": ["FRANCO", "FRANCO"]
+        }
+      },
+      {
+        nombre: "GASPES JONATAN",
+        horarios: {
+          "2025-04-01": ["07:00", "12:00"],
+          "2025-04-02": ["FERIADO", "FERIADO"],
+          "2025-04-03": ["FRANCO", "FRANCO"],
+          "2025-04-04": ["07:00", "12:00"],
+          "2025-04-05": ["07:00", "13:00"],
+          "2025-04-06": ["07:00", "13:00"]
+        }
+      }
+    ];
+
+    const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const mesesNombre = [
+      "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+      "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+
+    function generarSemanas(mes, anio) {
+      const inicio = new Date(anio, mes - 1, 1);
+      const fin = new Date(anio, mes, 0);
+
+      const inicioLunes = new Date(inicio);
+      inicioLunes.setDate(inicio.getDate() - inicio.getDay() + (inicio.getDay() === 0 ? -6 : 1));
+
+      const finDomingo = new Date(fin);
+      finDomingo.setDate(fin.getDate() + (7 - fin.getDay()) % 7);
+
+      const semanas = [];
+      let actual = new Date(inicioLunes);
+
+      while (actual <= finDomingo) {
+        const semana = [];
+        for (let i = 0; i < 7; i++) {
+          semana.push(new Date(actual));
+          actual.setDate(actual.getDate() + 1);
+        }
+        semanas.push(semana);
+      }
+
+      return semanas;
+    }
+
+    function render(mes, anio) {
+      document.getElementById("titulo").innerText = `Horarios Empleados - ${mesesNombre[mes - 1]} ${anio}`;
+
+      const semanas = generarSemanas(mes, anio);
+      const cont = document.getElementById("horarios");
+      cont.innerHTML = "";
+
+      semanas.forEach((semana, idx) => {
+        let html = `<h2>Semana ${idx + 1}</h2><table><thead><tr><th>Empleado</th>`;
+        semana.forEach(d => {
+          const dia = diasSemana[d.getDay() === 0 ? 6 : d.getDay() - 1];
+          html += `<th colspan='2'>${dia} ${d.getDate().toString().padStart(2, '0')}</th>`;
+        });
+        html += `</tr><tr><th></th>`;
+        semana.forEach(() => {
+          html += `<th>Entrada</th><th>Salida</th>`;
+        });
+        html += `</tr></thead><tbody>`;
+
+        empleados.forEach(emp => {
+          html += `<tr><td>${emp.nombre}</td>`;
+          semana.forEach(d => {
+            const fecha = d.toISOString().split('T')[0];
+            const turno = emp.horarios[fecha] || ["", ""];
+            let [e, s] = turno;
+            let claseEntrada = "editable", claseSalida = "editable";
+            const txt = `${e} ${s}`.toLowerCase();
+            if (e.toLowerCase() === s.toLowerCase()) {
+              if (txt.includes("feriado")) claseEntrada += " feriado", claseSalida += " feriado";
+              if (txt.includes("franco")) claseEntrada += " franco", claseSalida += " franco";
+              if (txt.includes("cumple")) claseEntrada += " cumple", claseSalida += " cumple";
+            }
+            html += `<td class='${claseEntrada}' contenteditable='true'>${e}</td>`;
+            html += `<td class='${claseSalida}' contenteditable='true'>${s}</td>`;
+          });
+          html += `</tr>`;
+        });
+
+        html += `</tbody></table>`;
+        cont.innerHTML += html;
+      });
+    }
+
+    function cargarSelectores() {
+      const selMes = document.getElementById("mes");
+      const selAnio = document.getElementById("anio");
+
+      for (let i = 0; i < 12; i++) {
+        selMes.innerHTML += `<option value="${i + 1}">${mesesNombre[i]}</option>`;
+      }
+      for (let y = 2024; y <= 2026; y++) {
+        selAnio.innerHTML += `<option value="${y}">${y}</option>`;
+      }
+
+      const hoy = new Date();
+      selMes.value = 4;
+      selAnio.value = 2025;
+
+      selMes.addEventListener("change", () => {
+        render(parseInt(selMes.value), parseInt(selAnio.value));
+      });
+      selAnio.addEventListener("change", () => {
+        render(parseInt(selMes.value), parseInt(selAnio.value));
+      });
+    }
+
+    cargarSelectores();
+    render(4, 2025);
+
+    let celdaActiva = null;
+
+    document.addEventListener("click", function (e) {
+      const selector = document.getElementById("selectorHora");
+
+      // Clic fuera del selector: ocultarlo
+      if (!selector.contains(e.target) && !e.target.classList.contains("editable")) {
+        selector.style.display = "none";
+      }
+
+      // Clic en celda editable: mostrar selector
+      if (e.target.classList.contains("editable")) {
+        celdaActiva = e.target;
+        const rect = e.target.getBoundingClientRect();
+        selector.style.top = `${rect.bottom + window.scrollY}px`;
+        selector.style.left = `${rect.left + window.scrollX}px`;
+        selector.style.display = "block";
+
+        // Preseleccionar hora/minutos si ya había algo
+        const [h, m] = (e.target.textContent || "").split(":");
+        document.getElementById("horaSelect").value = h?.padStart(2, "0") || "07";
+        document.getElementById("minutoSelect").value = m || "00";
+      }
+    });
+
+    document.getElementById("confirmarHora").addEventListener("click", () => {
+      const hora = document.getElementById("horaSelect").value;
+      const minuto = document.getElementById("minutoSelect").value;
+      if (celdaActiva) {
+        celdaActiva.textContent = `${hora}:${minuto}`;
+      }
+      document.getElementById("selectorHora").style.display = "none";
+    });
+
+    function poblarHoras() {
+      const horaSelect = document.getElementById("horaSelect");
+      for (let h = 0; h < 24; h++) {
+        const hora = h.toString().padStart(2, '0');
+        const option = document.createElement("option");
+        option.value = hora;
+        option.textContent = hora;
+        horaSelect.appendChild(option);
+      }
+    }
+    poblarHoras();
+
+    // Botones rápidos: FRANCO / FERIADO / CUMPLE
+    document.querySelectorAll(".btn-opcion").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (!celdaActiva) return;
+
+        const valor = btn.dataset.value;
+        const clase = valor.toLowerCase(); // feriado, cumple, franco
+
+        // Corregido: distinguir si es entrada o salida
+        const celdaHermana = celdaActiva.cellIndex % 2 === 1
+          ? celdaActiva.nextElementSibling // entrada ? salida
+          : celdaActiva.previousElementSibling; // salida ? entrada
+
+        [celdaActiva, celdaHermana].forEach(celda => {
+          celda.textContent = valor;
+          celda.classList.remove("feriado", "franco", "cumple");
+          celda.classList.add(clase);
+        });
+
+        document.getElementById("selectorHora").style.display = "none";
+      });
+    });
+
+    //al seleccionar hora borrar formato si es ("feriado", "franco", "cumple")
+    document.getElementById("confirmarHora").addEventListener("click", () => {
+      const hora = document.getElementById("horaSelect").value;
+      const minuto = document.getElementById("minutoSelect").value;
+      if (celdaActiva) {
+        celdaActiva.textContent = `${hora}:${minuto}`;
+        celdaActiva.classList.remove("feriado", "franco", "cumple");
+
+        // También limpiar la clase de la celda hermana
+        const celdaHermana = celdaActiva.cellIndex % 2 === 1
+          ? celdaActiva.nextElementSibling // entrada ? salida
+          : celdaActiva.previousElementSibling; // salida ? entrada
+        if (celdaHermana?.classList.contains("editable")) {
+          celdaHermana.classList.remove("feriado", "franco", "cumple");
+        }
+      }
+      document.getElementById("selectorHora").style.display = "none";
+    });
+
+    // Cambio de solapas
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+          document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+
+          btn.classList.add("active");
+          document.getElementById(btn.dataset.tab).classList.add("active");
+        });
+      });
+    });
+  </script>
+</body>
+</html>
