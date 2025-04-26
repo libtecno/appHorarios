@@ -3,87 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Horarios Empleados</title>
+
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    table {
-      border-collapse: collapse;
-      margin-bottom: 40px;
-      width: 100%;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 4px 8px;
-      text-align: center;
-      font-size: 13px;
-    }
-    th {
-      background-color: #f0f0f0;
-    }
-    .feriado {
-      background-color: #cce5ff;
-    }
-    .franco {
-      background-color: #ffe5b4;
-    }
-    .cumple {
-      background-color: #f5b7b1;
-    }
-    .editable {
-      cursor: pointer;
-    }
-    h2 {
-      margin-top: 40px;
-      font-size: 18px;
-    }
-    #selector-fecha {
-      margin-bottom: 20px;
-    }
-    #selector-fecha select {
-      font-size: 14px;
-      padding: 4px;
-    }
-    input[type="time"].hora {
-      font-size: 13px;
-      padding: 2px;
-    }
-    .btn-opcion {
-      margin: 4px;
-      padding: 4px 8px;
-      font-size: 13px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-opcion[data-value="FRANCO"] {
-      background-color: #ffe5b4;
-    }
-    .btn-opcion[data-value="FERIADO"] {
-      background-color: #cce5ff;
-    }
-    .btn-opcion[data-value="CUMPLE"] {
-      background-color: #f5b7b1;
-    }
-    .tab-btn {
-      padding: 6px 12px;
-      margin-right: 6px;
-      border: 1px solid #ccc;
-      background: #f9f9f9;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .tab-btn.active {
-      background: #e0e0e0;
-      font-weight: bold;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
+    
   </style>
 </head>
 <body>
@@ -131,33 +54,13 @@
     <p>Acá vamos a agregar funciones para gestionar los empleados.</p>
   </div>
   
-  <script>
-    const empleados = [
-      {
-        nombre: "BACHILLER DIEGO",
-        horarios: {
-          "2025-03-31": ["07:00", "15:00"],
-          "2025-04-01": ["07:00", "15:00"],
-          "2025-04-02": ["07:00", "15:00"],
-          "2025-04-03": ["07:00", "15:00"],
-          "2025-04-04": ["07:00", "15:00"],
-          "2025-04-05": ["CUMPLE", "CUMPLE"],
-          "2025-04-06": ["FRANCO", "FRANCO"]
-        }
-      },
-      {
-        nombre: "GASPES JONATAN",
-        horarios: {
-          "2025-04-01": ["07:00", "12:00"],
-          "2025-04-02": ["FERIADO", "FERIADO"],
-          "2025-04-03": ["FRANCO", "FRANCO"],
-          "2025-04-04": ["07:00", "12:00"],
-          "2025-04-05": ["07:00", "13:00"],
-          "2025-04-06": ["07:00", "13:00"]
-        }
-      }
-    ];
+  
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="db.js"></script>
+  <script src="leeEmpleadosHorarios.js"></script>
 
+
+  <script>
     const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     const mesesNombre = [
       "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -255,8 +158,15 @@
       });
     }
 
-    cargarSelectores();
-    render(4, 2025);
+    let empleados = [];
+
+    async function iniciarAplicacion() {
+      empleados = await cargarEmpleadosConHorarios();
+      cargarSelectores();
+      render(4, 2025);
+    }
+
+    iniciarAplicacion()
 
     let celdaActiva = null;
 
